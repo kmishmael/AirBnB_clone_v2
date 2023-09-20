@@ -6,20 +6,26 @@ from models.city import City
 from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
 import models
+import shlex
 
 
 class State(BaseModel, Base):
     """ State class """
     __tablename__ = "states"
     name = Column(String(128), nullable=False)
-    cities = relationship("City",  backref="state", cascade="delete")
-
-    if getenv("HBNB_TYPE_STORAGE") != "db":
-        @property
-        def cities(self):
-            """Get a list of all related City objects."""
-            city_list = []
-            for city in list(models.storage.all(City).values()):
-                if city.state_id == self.id:
-                    city_list.append(city)
-            return city_list
+    cities = relationship("City", cascade='all, delete, delete-orphan',
+                          backref="state")
+    @property
+    def cities(self):
+        var = models.storage.all()
+        list = []
+        result = []
+        for key in var:
+            city = key.replace('.', ' ')
+            city = shlex.split(city)
+            if (city[0] == 'City'):
+                list.append(var[key])
+        for el in list:
+            if (el.state_id == self.id):
+                result.append(el)
+        return (result)
